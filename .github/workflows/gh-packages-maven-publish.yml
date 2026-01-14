@@ -1,0 +1,35 @@
+name: GitHub Packages Maven Publish
+
+on:
+    push:
+        branches:
+         - main
+    release:
+        types:
+         - created
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: 📥 Checkout repository 
+          uses: actions/checkout@v2
+
+        - name: ☕ Set up JDK
+          uses: actions/setup-java@v2
+          with:
+            distribution: 'temurin'
+            java-version: '25'
+
+        - name: 📡 Grab Hytale server jar (TEMP)
+          run: |
+                # Garbage code, remove once Hytale is available via Maven
+                export HYTALE_DIR="$HOME/AppData/Roaming/Hytale/install/release/package/game/latest/Server"
+                mkdir -p $HYTALE_DIR
+                wget -O $HYTALE_DIR/HytaleServer.jar ${{ secrets.HYTALE_DOWNLOAD_LOCATION }}
+    
+        - name: 🚀 Build and deploy to GitHub Packages
+          run: mvn --batch-mode deploy -DaltDeploymentRepository="github::default::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}"
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
