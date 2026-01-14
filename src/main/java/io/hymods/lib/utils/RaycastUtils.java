@@ -3,6 +3,7 @@ package io.hymods.lib.utils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import com.hypixel.hytale.component.ArchetypeChunk;
@@ -38,7 +39,7 @@ public class RaycastUtils {
      * @return             The raycast result
      */
     public static RaycastResult raycast(World world, Vector3d origin, Vector3d direction, double maxDistance) {
-        return raycast(world, origin, direction, maxDistance, true, true);
+        return raycast(world, origin, direction, maxDistance, true, true, null);
     }
 
     /**
@@ -54,6 +55,23 @@ public class RaycastUtils {
      * @return               The raycast result
      */
     public static RaycastResult raycast(World world, Vector3d origin, Vector3d direction, double maxDistance, boolean checkBlocks, boolean checkEntities) {
+        return raycast(world, origin, direction, maxDistance, checkBlocks, checkEntities, null);
+    }
+
+    /**
+     * Performs a raycast with options for what to check and entity exclusion
+     * 
+     * @param  world         The world to raycast in
+     * @param  origin        The starting position
+     * @param  direction     The normalized direction vector
+     * @param  maxDistance   Maximum distance to check
+     * @param  checkBlocks   Whether to check for block collisions
+     * @param  checkEntities Whether to check for entity collisions
+     * @param  excludeEntity Entity to exclude from intersection checks (e.g., the source entity)
+     * 
+     * @return               The raycast result
+     */
+    public static RaycastResult raycast(World world, Vector3d origin, Vector3d direction, double maxDistance, boolean checkBlocks, boolean checkEntities, Ref<EntityStore> excludeEntity) {
         Store<EntityStore> store = world.getEntityStore().getStore();
 
         // Normalize direction if not already
@@ -61,7 +79,7 @@ public class RaycastUtils {
 
         // Check for entity hits if enabled
         if (checkEntities) {
-            RaycastResult entityHit = checkEntityIntersection(store, origin, normalizedDir, maxDistance);
+            RaycastResult entityHit = checkEntityIntersection(store, origin, normalizedDir, maxDistance, excludeEntity);
             if (entityHit != null && entityHit.isHit()) {
                 // If we hit an entity and aren't checking blocks, return immediately
                 if (!checkBlocks) {
@@ -110,7 +128,8 @@ public class RaycastUtils {
             return RaycastResult.MISS;
         }
 
-        return raycast(world, eyePos, direction, maxDistance);
+        // Exclude the player themselves from entity intersection checks
+        return raycast(world, eyePos, direction, maxDistance, true, true, playerRef);
     }
 
     /**
@@ -143,49 +162,114 @@ public class RaycastUtils {
     }
 
     /**
-     * Checks for entity intersection along a ray
+     * Approximate entity center height offset
      */
-    private static RaycastResult checkEntityIntersection(Store<EntityStore> store, Vector3d origin, Vector3d direction, double maxDistance) {
+    private static final double ENTITY_CENTER_HEIGHT = 1.0;
+
+    /**
+     * Checks for entity intersection along a ray.
+     * Mirrors the working pattern from the original CheckBlock implementation.
+     * 
+     * @param  store         The entity store
+     * @param  origin        The ray origin (typically eye position)
+     * @param  direction     The ray direction (normalized)
+     * @param  maxDistance   Maximum distance to check
+     * @param  excludeEntity Entity to exclude from checks (can be null)
+     * 
+     * @return               The raycast result, or MISS if nothing hit
+     */
+    @SuppressWarnings("removal")
+    private static RaycastResult checkEntityIntersection(Store<EntityStore> store, Vector3d origin, Vector3d direction, double maxDistance, Ref<EntityStore> excludeEntity) {
+        // Get the UUID of the entity to exclude BEFORE iteration
+        // This matches the working pattern - get player UUID upfront
+        final UUID excludeUUID;
+        if (excludeEntity != null) {
+            Player excludePlayer = store.getComponent(excludeEntity, Player.getComponentType());
+            excludeUUID = excludePlayer != null ? excludePlayer.getUuid() : null;
+        } else {
+            excludeUUID = null;
+        }
+
+        // Result holder matching the working code pattern
         final RaycastResult[] $closestHit = new RaycastResult[1];
-        final double[] $closestDistance = {
-                maxDistance + 1
-        };
+        final double[] $closestDistance = { maxDistance + 1 };
 
-        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> checker = (archetypeChunk, _) -> {
+        final double eyeX = origin.getX();
+        final double eyeY = origin.getY();
+        final double eyeZ = origin.getZ();
+
+        final double dirX = direction.getX();
+        final double dirY = direction.getY();
+        final double dirZ = direction.getZ();
+
+        Query<EntityStore> query = TransformComponent.getComponentType();
+        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> checker = (archetypeChunk, commandBuffer) -> {
             for (int index = 0; index < archetypeChunk.size(); index++) {
+                // Get entity ref and transform - matches working code order
                 Ref<EntityStore> entityRef = archetypeChunk.getReferenceTo(index);
-                TransformComponent transform = archetypeChunk.getComponent(index, TransformComponent.getComponentType());
-                if (transform == null) {
+                TransformComponent entityTransform = archetypeChunk.getComponent(index, TransformComponent.getComponentType());
+                if (entityTransform == null) {
                     continue;
                 }
 
-                Vector3d entityPos = transform.getPosition();
-
-                // Calculate closest point on ray to entity
-                Vector3d toEntity = entityPos.subtract(origin);
-                double projection = toEntity.dot(direction);
-
-                if (projection < 0 || projection > maxDistance) {
+                // Skip if it's the player themselves - EXACTLY like working code
+                Player entityPlayer = store.getComponent(entityRef, Player.getComponentType());
+                if (entityPlayer != null && excludeUUID != null && entityPlayer.getUuid().equals(excludeUUID)) {
                     continue;
                 }
 
-                Vector3d closestPointOnRay = new Vector3d(
-                    origin.getX() + direction.getX() * projection,
-                    origin.getY() + direction.getY() * projection,
-                    origin.getZ() + direction.getZ() * projection
-                );
+                Vector3d entityPos = entityTransform.getPosition();
+                double entityCenterY = entityPos.getY() + ENTITY_CENTER_HEIGHT; // Approximate entity center height
 
-                double distToEntity = MathUtils.distance(closestPointOnRay, entityPos);
+                // Calculate distance from eye to entity
+                double dx = entityPos.getX() - eyeX;
+                double dy = entityCenterY - eyeY;
+                double dz = entityPos.getZ() - eyeZ;
+                double distToEntity = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-                if (distToEntity <= ENTITY_HIT_RADIUS && projection < $closestDistance[0]) {
-                    String entityName = getEntityName(entityRef, store);
-                    $closestHit[0] = new RaycastResult(closestPointOnRay, projection, entityRef, entityName);
-                    $closestDistance[0] = projection;
+                if (distToEntity > maxDistance) {
+                    continue;
+                }
+
+                // Check if entity is roughly in the direction we're looking
+                double dot = dx * dirX + dy * dirY + dz * dirZ;
+                if (dot < 0) {
+                    continue; // Entity is behind us
+                }
+
+                // Point on ray closest to entity
+                double projX = eyeX + dirX * dot;
+                double projY = eyeY + dirY * dot;
+                double projZ = eyeZ + dirZ * dot;
+
+                // Perpendicular distance from entity to ray
+                double perpDist = Math.sqrt(
+                    Math.pow(entityPos.getX() - projX, 2) +
+                    Math.pow(entityCenterY - projY, 2) +
+                    Math.pow(entityPos.getZ() - projZ, 2));
+
+                if (perpDist <= ENTITY_HIT_RADIUS && dot < $closestDistance[0]) {
+                    // Get display name based on entity type - reuse entityPlayer we already fetched
+                    String displayName;
+                    if (entityPlayer != null) {
+                        displayName = entityPlayer.getDisplayName();
+                    } else {
+                        NPCEntity npc = store.getComponent(entityRef, NPCEntity.getComponentType());
+                        if (npc != null && npc.getRoleName() != null) {
+                            displayName = npc.getRoleName();
+                        } else {
+                            displayName = "Entity";
+                        }
+                    }
+
+                    Vector3d hitPos = new Vector3d(projX, projY, projZ);
+                    $closestHit[0] = new RaycastResult(hitPos, dot, entityRef, displayName);
+                    $closestDistance[0] = dot;
                 }
             }
         };
 
-        store.forEachChunk(TransformComponent.getComponentType(), checker);
+        store.forEachChunk(query, checker);
         return $closestHit[0] != null ? $closestHit[0] : RaycastResult.MISS;
     }
 
@@ -292,19 +376,52 @@ public class RaycastUtils {
      * @param  maxDistance Maximum distance
      * @param  angle       Cone angle in degrees
      * 
-     * @return             Array of entity references within the cone
+     * @return             List of entity references within the cone
      */
     public static List<Ref<EntityStore>> getEntitiesInCone(Store<EntityStore> store, Vector3d origin, Vector3d direction, double maxDistance, double angle) {
+        return getEntitiesInCone(store, origin, direction, maxDistance, angle, null);
+    }
+
+    /**
+     * Performs a cone-shaped check for entities with exclusion support
+     * 
+     * @param  store         The entity store
+     * @param  origin        Starting position
+     * @param  direction     Direction of the cone
+     * @param  maxDistance   Maximum distance
+     * @param  angle         Cone angle in degrees
+     * @param  excludeEntity Entity to exclude from checks (e.g., the source entity)
+     * 
+     * @return               List of entity references within the cone
+     */
+    @SuppressWarnings("removal")
+    public static List<Ref<EntityStore>> getEntitiesInCone(Store<EntityStore> store, Vector3d origin, Vector3d direction, double maxDistance, double angle, Ref<EntityStore> excludeEntity) {
         List<Ref<EntityStore>> entities = new ArrayList<>();
         double angleRad = Math.toRadians(angle);
         double cosAngle = Math.cos(angleRad);
 
+        // Get the UUID of the entity to exclude - same pattern as working code
+        final UUID excludeUUID;
+        if (excludeEntity != null) {
+            Player excludePlayer = store.getComponent(excludeEntity, Player.getComponentType());
+            excludeUUID = excludePlayer != null ? excludePlayer.getUuid() : null;
+        } else {
+            excludeUUID = null;
+        }
+
         Query<EntityStore> query = TransformComponent.getComponentType();
-        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> collector = (archetypeChunk, _) -> {
+        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> collector = (archetypeChunk, commandBuffer) -> {
             for (int index = 0; index < archetypeChunk.size(); index++) {
                 Ref<EntityStore> entityRef = archetypeChunk.getReferenceTo(index);
+                
                 TransformComponent transform = archetypeChunk.getComponent(index, TransformComponent.getComponentType());
                 if (transform == null) {
+                    continue;
+                }
+
+                // Skip if it's the player themselves - exactly like working code
+                Player entityPlayer = store.getComponent(entityRef, Player.getComponentType());
+                if (entityPlayer != null && excludeUUID != null && entityPlayer.getUuid().equals(excludeUUID)) {
                     continue;
                 }
 
