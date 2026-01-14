@@ -1,0 +1,18 @@
+{
+  "Group": "${project.groupId}",
+  "Name": "${project.name}",
+  "Version": "${project.version}",
+  "Description": "Utilities for Hytale mod development.",
+  "Authors": [
+    {
+	"Name": "HyMods"
+    }
+  ],
+  "Website": "hymods.io",
+  "ServerVersion": "*",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "DisabledByDefault": false,
+  "Main": "io.hymods.lib.HymodsLib",
+  "IncludesAssetPack": false
+}
