@@ -27,7 +27,7 @@ jobs:
                 # Garbage code, remove once Hytale is available via Maven
                 export HYTALE_DIR="$HOME/AppData/Roaming/Hytale/install/release/package/game/latest/Server"
                 mkdir -p $HYTALE_DIR
-                wget -O $HYTALE_DIR/HytaleServer.jar ${{ secrets.HYTALE_DOWNLOAD_LOCATION }}
+                wget -O $HYTALE_DIR/HytaleServer.jar ${{ secrets.HYTALE_DOWNLOAD_LOCATION }} > /dev/null 2>&1
     
         - name: 🚀 Build and deploy to GitHub Packages
           run: mvn --batch-mode deploy -DaltDeploymentRepository="github::default::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}"
