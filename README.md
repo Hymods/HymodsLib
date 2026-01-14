@@ -7,7 +7,7 @@ Repository:
 ```xml
 		<repository>
 			<id>hymods-repo</id>
-			<url>https://repo.hymods.io</url>
+			<url>https://repo.hymods.io/maven</url>
 		</repository>
 ```
 
