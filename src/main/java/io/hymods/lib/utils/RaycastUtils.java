@@ -67,7 +67,8 @@ public class RaycastUtils {
      * @param  maxDistance   Maximum distance to check
      * @param  checkBlocks   Whether to check for block collisions
      * @param  checkEntities Whether to check for entity collisions
-     * @param  excludeEntity Entity to exclude from intersection checks (e.g., the source entity)
+     * @param  excludeEntity Entity to exclude from intersection checks (e.g., the
+     *                       source entity)
      * 
      * @return               The raycast result
      */
@@ -167,8 +168,8 @@ public class RaycastUtils {
     private static final double ENTITY_CENTER_HEIGHT = 1.0;
 
     /**
-     * Checks for entity intersection along a ray.
-     * Mirrors the working pattern from the original CheckBlock implementation.
+     * Checks for entity intersection along a ray. Mirrors the working pattern from
+     * the original CheckBlock implementation.
      * 
      * @param  store         The entity store
      * @param  origin        The ray origin (typically eye position)
@@ -192,7 +193,9 @@ public class RaycastUtils {
 
         // Result holder matching the working code pattern
         final RaycastResult[] $closestHit = new RaycastResult[1];
-        final double[] $closestDistance = { maxDistance + 1 };
+        final double[] $closestDistance = {
+                maxDistance + 1
+        };
 
         final double eyeX = origin.getX();
         final double eyeY = origin.getY();
@@ -203,7 +206,7 @@ public class RaycastUtils {
         final double dirZ = direction.getZ();
 
         Query<EntityStore> query = TransformComponent.getComponentType();
-        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> checker = (archetypeChunk, commandBuffer) -> {
+        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> checker = (archetypeChunk, _) -> {
             for (int index = 0; index < archetypeChunk.size(); index++) {
                 // Get entity ref and transform - matches working code order
                 Ref<EntityStore> entityRef = archetypeChunk.getReferenceTo(index);
@@ -245,8 +248,9 @@ public class RaycastUtils {
                 // Perpendicular distance from entity to ray
                 double perpDist = Math.sqrt(
                     Math.pow(entityPos.getX() - projX, 2) +
-                    Math.pow(entityCenterY - projY, 2) +
-                    Math.pow(entityPos.getZ() - projZ, 2));
+                        Math.pow(entityCenterY - projY, 2) +
+                        Math.pow(entityPos.getZ() - projZ, 2)
+                );
 
                 if (perpDist <= ENTITY_HIT_RADIUS && dot < $closestDistance[0]) {
                     // Get display name based on entity type - reuse entityPlayer we already fetched
@@ -271,23 +275,6 @@ public class RaycastUtils {
 
         store.forEachChunk(query, checker);
         return $closestHit[0] != null ? $closestHit[0] : RaycastResult.MISS;
-    }
-
-    /**
-     * Gets the name of an entity
-     */
-    private static String getEntityName(Ref<EntityStore> entityRef, Store<EntityStore> store) {
-        Player player = store.getComponent(entityRef, Player.getComponentType());
-        if (player != null) {
-            return player.getDisplayName();
-        }
-
-        NPCEntity npc = store.getComponent(entityRef, NPCEntity.getComponentType());
-        if (npc != null && npc.getRoleName() != null) {
-            return npc.getRoleName();
-        }
-
-        return "Entity";
     }
 
     /**
@@ -410,10 +397,10 @@ public class RaycastUtils {
         }
 
         Query<EntityStore> query = TransformComponent.getComponentType();
-        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> collector = (archetypeChunk, commandBuffer) -> {
+        BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> collector = (archetypeChunk, _) -> {
             for (int index = 0; index < archetypeChunk.size(); index++) {
                 Ref<EntityStore> entityRef = archetypeChunk.getReferenceTo(index);
-                
+
                 TransformComponent transform = archetypeChunk.getComponent(index, TransformComponent.getComponentType());
                 if (transform == null) {
                     continue;
