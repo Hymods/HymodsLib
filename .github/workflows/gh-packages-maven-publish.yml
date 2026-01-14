@@ -29,7 +29,17 @@ jobs:
                 mkdir -p $HYTALE_DIR
                 wget -O $HYTALE_DIR/HytaleServer.jar ${{ secrets.HYTALE_DOWNLOAD_LOCATION }} > /dev/null 2>&1
     
-        - name: 🚀 Build and deploy to GitHub Packages
+        - name: ⚙️ Build
+          run: mvn clean package
+        
+        - name: 🆙 Upload the jar to GitHub
+          uses: actions/upload-artifact@v4
+          with:
+            name: hymodslib.jar
+            path: target/final/hymodslib.jar
+
+        - name: 🚀 Deploy to GitHub Packages
           run: mvn --batch-mode deploy -DaltDeploymentRepository="github::default::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}"
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
