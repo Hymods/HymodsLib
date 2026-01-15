@@ -9,6 +9,34 @@ on:
          - created
 
 jobs:
+    package:
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: 📥 Checkout repository 
+          uses: actions/checkout@v2
+
+        - name: ☕ Set up JDK
+          uses: actions/setup-java@v2
+          with:
+            distribution: 'temurin'
+            java-version: '25'
+
+        - name: 📡 Grab Hytale server jar (TEMP)
+          run: |
+                # Garbage code, remove once Hytale is available via Maven
+                export HYTALE_DIR="$HOME/AppData/Roaming/Hytale/install/release/package/game/latest/Server"
+                mkdir -p $HYTALE_DIR
+                wget -O $HYTALE_DIR/HytaleServer.jar ${{ secrets.HYTALE_DOWNLOAD_LOCATION }} > /dev/null 2>&1
+    
+        - name: ⚙️ Build
+          run: mvn clean package
+        
+        - name: 🚀 Deploy to GitHub Packages
+          run: mvn --batch-mode deploy -DaltDeploymentRepository="github::default::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}"
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     build:
         runs-on: ubuntu-latest
 
@@ -38,17 +66,12 @@ jobs:
             name: hymodslib.jar
             path: target/final/hymodslib.jar
 
-        - name: 🚀 Deploy to GitHub Packages
-          run: mvn --batch-mode deploy -DaltDeploymentRepository="github::default::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}"
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
         - name: 📖 Upload Javadocs
           id: deployment
           uses: actions/upload-pages-artifact@v3
           with:
             path: target/site/apidocs
-          
+
     deploy:
       environment:
         name: github-pages
