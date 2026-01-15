@@ -70,7 +70,7 @@ jobs:
           id: deployment
           uses: actions/upload-pages-artifact@v3
           with:
-            path: target/site/apidocs
+            path: target/reports/apidocs
 
     deploy:
       environment:
