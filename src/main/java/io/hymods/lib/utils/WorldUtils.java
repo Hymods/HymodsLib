@@ -19,6 +19,10 @@ import io.hymods.lib.data.BlockInfo;
  */
 public class WorldUtils {
 
+    private WorldUtils() {
+        // Prevent instantiation
+    }
+
     /**
      * Gets a block at a specific position
      * 

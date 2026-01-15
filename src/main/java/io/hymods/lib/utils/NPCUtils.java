@@ -25,6 +25,10 @@ import it.unimi.dsi.fastutil.Pair;
 public class NPCUtils {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
+    private NPCUtils() {
+        // Prevent instantiation
+    }
+
     /**
      * Spawns an NPC at a location
      * 

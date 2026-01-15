@@ -8,6 +8,10 @@ import com.hypixel.hytale.math.vector.Vector3f;
  */
 public class MathUtils {
 
+    private MathUtils() {
+        // Prevent instantiation
+    }
+
     /**
      * Calculates the distance between two points
      * 
@@ -17,10 +21,7 @@ public class MathUtils {
      * @return      The distance
      */
     public static double distance(Vector3d from, Vector3d to) {
-        double dx = to.getX() - from.getX();
-        double dy = to.getY() - from.getY();
-        double dz = to.getZ() - from.getZ();
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return Math.sqrt(distanceSquared(from, to));
     }
 
     /**

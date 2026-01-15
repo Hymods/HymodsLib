@@ -22,6 +22,10 @@ public record RaycastResult(
 
     HitType hitType
 ) {
+
+    /**
+     * Constant representing a miss (no hit)
+     */
     public static final RaycastResult MISS = new RaycastResult(null, -1, null, null, null, null, HitType.NONE);
 
     /**
@@ -38,22 +42,37 @@ public record RaycastResult(
         this(hitPosition, distance, null, null, entityRef, entityName, HitType.ENTITY);
     }
 
+    /**
+     * Checks if the raycast resulted in a miss
+     */
     public boolean isMiss() {
         return this.hitType == HitType.NONE;
     }
 
+    /**
+     * Checks if the raycast resulted in a hit (either block or entity)
+     */
     public boolean isHit() {
         return this.hitType != HitType.NONE;
     }
 
+    /**
+     * Checks if the raycast hit a block
+     */
     public boolean isBlockHit() {
         return this.hitType == HitType.BLOCK;
     }
 
+    /**
+     * Checks if the raycast hit an entity
+     */
     public boolean isEntityHit() {
         return this.hitType == HitType.ENTITY;
     }
 
+    /**
+     * Enum representing the type of hit
+     */
     public static enum HitType {
         NONE,
         BLOCK,

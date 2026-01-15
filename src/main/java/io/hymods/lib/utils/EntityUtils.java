@@ -36,6 +36,10 @@ import io.hymods.lib.data.SearchParameters;
 public class EntityUtils {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
+    private EntityUtils() {
+        // Prevent instantiation
+    }
+
     /**
      * Gets an entity by its UUID
      * 
@@ -86,7 +90,7 @@ public class EntityUtils {
      */
     public static EntitySearchResult searchEntities(World world, SearchParameters params) {
         final Store<EntityStore> store = world.getEntityStore().getStore();
-        final EntitySearchResult result = new EntitySearchResult(params);
+        List<EntityInfo> foundEntities = new ArrayList<>();
         final double radiusSquared = params.radius() * params.radius();
 
         BiConsumer<ArchetypeChunk<EntityStore>, CommandBuffer<EntityStore>> collector = (archetypeChunk, _) -> {
@@ -140,13 +144,13 @@ public class EntityUtils {
                     EntityInfo info = new EntityInfo(
                         entityRef, name, type, entityPos, distance, isPlayer, isNPC
                     );
-                    result.addEntity(info);
+                    foundEntities.add(info);
                 }
             }
         };
 
         store.forEachChunk(TransformComponent.getComponentType(), collector);
-        return result;
+        return new EntitySearchResult(Collections.unmodifiableList(foundEntities), params);
     }
 
     /**

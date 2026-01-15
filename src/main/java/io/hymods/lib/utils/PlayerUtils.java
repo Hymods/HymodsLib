@@ -25,6 +25,10 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
  */
 public class PlayerUtils {
 
+    private PlayerUtils() {
+        // Prevent instantiation
+    }
+
     /**
      * Gets a player by their UUID
      * 

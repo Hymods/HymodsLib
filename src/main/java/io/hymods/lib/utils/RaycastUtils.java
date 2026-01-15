@@ -28,6 +28,10 @@ public class RaycastUtils {
     private static final double DEFAULT_STEP = 0.1;
     private static final double ENTITY_HIT_RADIUS = 1.5;
 
+    private RaycastUtils() {
+        // Prevent instantiation
+    }
+
     /**
      * Performs a raycast from an origin point in a direction
      * 
@@ -135,6 +139,13 @@ public class RaycastUtils {
 
     /**
      * Checks for block intersection along a ray
+     * 
+     * @param  world       The world to check in
+     * @param  origin      The ray origin (typically eye position)
+     * @param  direction   The ray direction (normalized)
+     * @param  maxDistance Maximum distance to check
+     * 
+     * @return             The raycast result, or MISS if nothing hit
      */
     private static RaycastResult checkBlockIntersection(World world, Vector3d origin, Vector3d direction, double maxDistance) {
         double stepSize = DEFAULT_STEP;
@@ -278,7 +289,7 @@ public class RaycastUtils {
     }
 
     /**
-     * Checks if a block is passable (air, water, etc)
+     * @return true if a block is passable (air, water, etc)
      */
     private static boolean isPassableBlock(BlockType block) {
         if (block == null) {

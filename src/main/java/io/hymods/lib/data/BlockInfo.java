@@ -9,16 +9,28 @@ import io.hymods.lib.utils.WorldUtils;
  * Information about a block
  */
 public record BlockInfo(
+    /**
+     * The position of the block
+     */
     Vector3i position,
+    /**
+     * The type of the block
+     */
     BlockType type
 ) {
 
+    /**
+     * @return true if the block is air
+     */
     public boolean isAir() {
-        return WorldUtils.isAirBlock(type);
+        return WorldUtils.isAirBlock(this.type);
     }
 
+    /**
+     * @return true if the block is solid
+     */
     public boolean isSolid() {
-        return WorldUtils.isSolidBlock(type);
+        return WorldUtils.isSolidBlock(this.type);
     }
 
 }
