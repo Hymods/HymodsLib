@@ -30,7 +30,7 @@ jobs:
                 wget -O $HYTALE_DIR/HytaleServer.jar ${{ secrets.HYTALE_DOWNLOAD_LOCATION }} > /dev/null 2>&1
     
         - name: ⚙️ Build
-          run: mvn clean package
+          run: mvn clean package javadoc:javadoc
         
         - name: 🆙 Upload the jar to GitHub
           uses: actions/upload-artifact@v4
@@ -43,3 +43,19 @@ jobs:
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
+        - name: 📖 Upload Javadocs
+          id: deployment
+          uses: actions/upload-pages-artifact@v3
+          with:
+            path: target/site/apidocs
+          
+    deploy:
+      environment:
+        name: github-pages
+        url: ${{ steps.deployment.outputs.page_url }}
+      runs-on: ubuntu-latest
+      needs: build
+      steps:
+        - name: 📖 Deploy Javadocs
+          id: deployment
+          uses: actions/deploy-pages@v4
