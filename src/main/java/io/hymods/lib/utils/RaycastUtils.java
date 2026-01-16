@@ -277,6 +277,20 @@ public class RaycastUtils {
                         }
                     }
 
+                    // Skip noisy/unknown entities so we can raycast a more useful target.
+                    // Examples: blank, "Entity", protocol type strings.
+                    if (displayName == null) {
+                        continue;
+                    }
+                    String trimmed = displayName.trim();
+                    if (trimmed.isEmpty()) {
+                        continue;
+                    }
+                    String lower = trimmed.toLowerCase();
+                    if ("entity".equals(lower) || lower.startsWith("com.hypixel.hytale.")) {
+                        continue;
+                    }
+
                     Vector3d hitPos = new Vector3d(projX, projY, projZ);
                     $closestHit[0] = new RaycastResult(hitPos, dot, entityRef, displayName);
                     $closestDistance[0] = dot;
