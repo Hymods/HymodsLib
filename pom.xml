@@ -11,7 +11,8 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
 		<!-- <hytale.install-dir>${user.home}/Library/Application Support</hytale.install-dir> -->
-		<hytale.install-dir>${user.home}/AppData/Roaming</hytale.install-dir>
+		<!-- <hytale.install-dir>${user.home}/AppData/Roaming</hytale.install-dir> -->
+		<hytale.install-dir>${user.home}/.var/app/com.hypixel.HytaleLauncher/data</hytale.install-dir>
 		<hytale.patchline>release</hytale.patchline>
 	</properties>
 
