@@ -14,5 +14,5 @@
   "OptionalDependencies": {},
   "DisabledByDefault": false,
   "Main": "io.hymods.lib.HymodsLib",
-  "IncludesAssetPack": false
+  "IncludesAssetPack": true
 }
